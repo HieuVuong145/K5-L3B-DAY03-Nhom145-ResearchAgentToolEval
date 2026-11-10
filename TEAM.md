@@ -41,3 +41,48 @@ Sao chép mục dưới đây cho từng thành viên.
 ### Bằng chứng
 
 -
+
+## HoVaTen-MSSV
+
+### Phần việc phụ trách
+
+-
+
+### Đóng góp cụ thể
+
+-
+
+### Bằng chứng
+
+-
+
+## VuongToanMinhHieu-2A202603853
+
+### Phần việc phụ trách
+
+- CP4: Team eval tests
+
+### Đóng góp cụ thể
+
+- 10 case (5 single-turn + 5 multi-turn) bao phủ 6 loại lỗi: wrong_tool, wrong_arg_value, unneccesary_tool, out_of_scope, missing_info, wrong_boundary.
+- Kiểm tra tool mới và cơ chế no-tool
+- Chạy eval thực tế với openrouter
+- Viết và phân tích bảng B3
+
+### Bằng chứng
+
+- Commit history, các file eval_group.json, bảng 3 trong group_report.md, v3_B_...7587.json
+
+## HoVaTen-MSSV
+
+### Phần việc phụ trách
+
+-
+
+### Đóng góp cụ thể
+
+-
+
+### Bằng chứng
+
+-
