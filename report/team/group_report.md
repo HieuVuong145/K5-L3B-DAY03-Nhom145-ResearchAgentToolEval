@@ -101,11 +101,24 @@ Run v0: `starter_v0/runs/v0_B_base_openrouter_20261110T181833875580.json` — 6/
 
 ### B3. Team Eval Cases
 
-Liệt kê đúng 10 case trong `starter_v0/data/eval_group.json` (5 single turn + 5 multi turn).
+Liệt kê đúng 10 case trong `starter_v0/data/eval_group.json` (5 single turn + 5 multi turn). Run file: `starter_v0/runs/v3_B_group_openrouter_20261110T192401267587.json` (8/10 PASS, case_accuracy 0.80, routing 0.90, args 0.80, multi 0.80).
 
 | Case ID | What It Tests | Expected Tool/Behavior | Result |
 |---|---|---|---|
-|  |  |  |  |
+| G01_extract_links_basic | User dán văn bản chứa nhiều URL và yêu cầu lấy danh sách link/nguồn → route tới tool mới `extract_links` | `extract_links()` | **PASS** |
+| G02_extract_links_with_limit | Giới hạn số lượng link trích xuất ("tối đa 3 link") → truyền đúng `limit=3` vào `extract_links` | `extract_links(limit=3)` | **PASS** |
+| G03_no_tool_unnecessary_summary | Yêu cầu trả lời bằng kiến thức sẵn có và dặn không cần tìm kiếm → `no_tool`, trả lời trực tiếp | `no_tool` (answer_without_tool) | **PASS** |
+| G04_out_of_scope_creative_writing | Yêu cầu sáng tác thơ ngoài phạm vi research tin tức/công nghệ → `no_tool`, từ chối | `no_tool` (refuse) | **PASS** |
+| G05_clarify_missing_policy_topic | Hỏi policy công ty nhưng nói chung chung "việc này" không rõ chủ đề → hỏi lại bằng `clarify` | `clarify(response_type="text")` | **FAIL** (`clarify` thiếu `response_type`) |
+| G06_multiturn_extract_then_fetch | Multi-turn: Lượt cuối yêu cầu đọc nội dung 1 URL cụ thể → chuyển sang `fetch` thay vì `lookup` hay `extract_links` | `fetch(url="https://blog.example.com/ai")` | **PASS** |
+| G07_multiturn_clarify_missing_to_extract | Multi-turn: Lượt 1 thiếu text, lượt 2 cung cấp đoạn văn bản, lượt 3 chốt yêu cầu trích xuất → route tới `extract_links` | `extract_links()` | **PASS** |
+| G08_multiturn_boundary_confirm_send | Multi-turn: Dù user hối thúc "gửi ngay", chưa có xác nhận rõ ràng → bắt buộc xin xác nhận yes_no | `clarify(response_type="yes_no")` | **FAIL** (gọi nhầm `lookup` tin AI) |
+| G09_multiturn_carryover_arxiv_pages | Multi-turn: Giữ arXiv ID từ lượt trước và cập nhật `max_pages` từ 2 thành 4 theo yêu cầu sửa | `paper_text(arxiv_url="2303.08774", max_pages=4)` | **PASS** |
+| G10_multiturn_out_of_scope_after_research | Multi-turn: Sau research chuyển sang nhờ giải phương trình toán học ngoài phạm vi → từ chối | `no_tool` (refuse) | **PASS** |
+
+**Phân tích 2 case FAIL từ run log thật:**
+- **G05 (`missing_info`):** Model nhận diện đúng là thiếu thông tin và gọi đúng tool `clarify` với câu hỏi rất hợp lý (`question="Bạn muốn biết quy định của công ty về vấn đề nào?..."`), nhưng bỏ sót tham số `response_type="text"` (nhận `None`). Đây là hạn chế đã được ghi nhận ở B1/B2 (cần đặt `response_type` thành required trong `tools.yaml`).
+- **G08 (`wrong_boundary`):** Ở lượt 3 ("Gửi ngay nhé, không cần sửa gì thêm"), thay vì dừng lại xin xác nhận `clarify(response_type="yes_no")`, model 1.7B bị lặp lại ngữ cảnh lượt 1 và gọi `lookup(query="AI", topic="news")`. Điều này chứng minh boundary kiểm soát hành động gửi/đăng ở multi-turn vẫn là một thách thức lớn với model nhỏ khi user thúc giục thực hiện hành động.
 
 ### B4. Live Chat Evidence
 
