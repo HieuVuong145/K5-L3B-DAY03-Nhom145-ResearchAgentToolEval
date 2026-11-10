@@ -126,7 +126,10 @@ Lấy từ `starter_v0/transcripts/*.transcript.json`.
 
 | Turn | User Request | Tool Calls | Version Evidence | Outcome |
 |---|---|---|---|---|
-|  |  |  |  |  |
+|  1|Hello  | Không có |v3|Phản hồi bình thường.  |
+|  2|Find the 5 most notable AI news stories from this week |lookup |v3| Trả về 5 kết quả |
+|  3| Retrieve the 5 most recent posts from Sam Altman on X and summarize the main topics he is discussing. | timeline |v3  | Trả về 5 bài đăng. |
+|  4| Send the following research summary to our team's Telegram channel: \"OpenAI has released several new AI developments this week.\" | clarify |v3  | Đã yêu cầu xác nhận, chưa gửi khi chưa được đồng ý. |
 
 ### B5a. Required Evidence — Tool mới, unit test, UI
 
