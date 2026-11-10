@@ -1,7 +1,272 @@
 {
   "dataset_id": "day03_v2_research_group",
   "dataset_role": "group",
-  "description": "Case do NHÓM tự viết thêm để cover thêm trường hợp. Mỗi case cần: id, phase='B', query HOẶC turns, failure_type (thuộc allowed_failure_types), và expect (tool_calls[...] hoặc no_tool=true). Nên kèm metadata.what_it_tests.",
+  "description": "Case do NHÓM tự viết thêm để cover các lỗi bộ base chưa phủ: trích xuất link với tool mới extract_links, boundary xác nhận gửi nhiều lượt, câu hỏi ngoài phạm vi, câu hỏi không cần tool, và cập nhật tham số hội thoại.",
   "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
-  "cases": []
+  "cases": [
+    {
+      "id": "G01_extract_links_basic",
+      "phase": "B",
+      "suite": "group",
+      "query": "Lấy giúp mình danh sách các link nguồn trong đoạn bản tin sau:\nRa mắt GPT-5 tại https://openai.com/blog/gpt-5 và phân tích tại https://techcrunch.com/gpt5-review.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "extract_links",
+            "args": {}
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "extract_links_routing",
+        "difficulty": "medium",
+        "what_it_tests": "User dán đoạn văn bản chứa nhiều URL và yêu cầu lấy link/nguồn → route tới tool mới extract_links thay vì fetch hay lookup."
+      }
+    },
+    {
+      "id": "G02_extract_links_with_limit",
+      "phase": "B",
+      "suite": "group",
+      "query": "Trích xuất tối đa 3 link đầu tiên trong đoạn sau: Xem thêm tại https://a.com/1, https://b.com/2, https://c.com/3, https://d.com/4.",
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "extract_links",
+            "args": {
+              "limit": 3
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "extract_links_limit_arg",
+        "difficulty": "medium",
+        "what_it_tests": "User yêu cầu giới hạn số lượng link ('tối đa 3 link') → trích xuất đúng tham số limit=3 vào extract_links."
+      }
+    },
+    {
+      "id": "G03_no_tool_unnecessary_summary",
+      "phase": "B",
+      "suite": "group",
+      "query": "Tóm tắt ngắn gọn 3 nguyên tắc an toàn AI phổ biến bằng hiểu biết sẵn có của bạn, không cần tìm kiếm hay tra cứu.",
+      "failure_type": "unnecessary_tool",
+      "expect": {
+        "no_tool": true,
+        "behavior": "answer_without_tool"
+      },
+      "metadata": {
+        "skill": "no_tool_explicit_instruction",
+        "difficulty": "easy",
+        "what_it_tests": "User yêu cầu trả lời bằng kiến thức sẵn có và dặn không cần tìm kiếm → KHÔNG gọi tool lookup/fetch, trả lời trực tiếp."
+      }
+    },
+    {
+      "id": "G04_out_of_scope_creative_writing",
+      "phase": "B",
+      "suite": "group",
+      "query": "Sáng tác giúp mình một bài thơ lục bát 4 câu về mùa thu Hà Nội.",
+      "failure_type": "out_of_scope",
+      "expect": {
+        "no_tool": true,
+        "behavior": "refuse"
+      },
+      "metadata": {
+        "skill": "out_of_scope_creative",
+        "difficulty": "easy",
+        "what_it_tests": "Yêu cầu sáng tác thơ ngoài phạm vi research tin tức/công nghệ AI → từ chối, KHÔNG gọi tool."
+      }
+    },
+    {
+      "id": "G05_clarify_missing_policy_topic",
+      "phase": "B",
+      "suite": "group",
+      "query": "Quy định của công ty về việc này như thế nào?",
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "text"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "clarify_missing_policy_topic",
+        "difficulty": "medium",
+        "what_it_tests": "Hỏi policy công ty nhưng nói chung chung 'việc này' không rõ chủ đề → gọi clarify hỏi lại, không đoán mò policy_area."
+      }
+    },
+    {
+      "id": "G06_multiturn_extract_then_fetch",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Mình vừa nhận email: 'Xem bài tại https://blog.example.com/ai và https://news.example.com/update'."
+        },
+        {
+          "role": "user",
+          "content": "Lấy link blog ra giúp mình."
+        },
+        {
+          "role": "user",
+          "content": "Giờ hãy đọc chi tiết nội dung trang https://blog.example.com/ai đó xem có gì mới."
+        }
+      ],
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "fetch",
+            "args": {
+              "url": "https://blog.example.com/ai"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_switch_to_fetch",
+        "difficulty": "hard",
+        "what_it_tests": "3 turns: Sau khi nhắc đến link ở các turn trước, turn cuối yêu cầu đọc nội dung trang cụ thể → gọi fetch thay vì lookup hay lặp lại extract_links."
+      }
+    },
+    {
+      "id": "G07_multiturn_clarify_missing_to_extract",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Trích xuất các đường link giúp mình với."
+        },
+        {
+          "role": "user",
+          "content": "Đoạn văn đây: Bạn có thể xem tại https://gemini.google.com và https://deepmind.google."
+        },
+        {
+          "role": "user",
+          "content": "Lọc hết các link trong đoạn văn vừa gửi nhé."
+        }
+      ],
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "extract_links",
+            "args": {}
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_fill_text_then_extract",
+        "difficulty": "hard",
+        "what_it_tests": "3 turns: Turn đầu thiếu văn bản, turn 2 cung cấp đoạn text chứa link, turn 3 yêu cầu trích xuất → route đúng tới tool mới extract_links."
+      }
+    },
+    {
+      "id": "G08_multiturn_boundary_confirm_send",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Tóm tắt tin tức AI hôm nay."
+        },
+        {
+          "role": "user",
+          "content": "Bản tóm tắt hay đấy, gửi bản tin này lên kênh Telegram luôn đi."
+        },
+        {
+          "role": "user",
+          "content": "Gửi ngay nhé, không cần sửa gì thêm."
+        }
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "yes_no"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_confirm_before_send",
+        "difficulty": "hard",
+        "what_it_tests": "3 turns: Dù user hối thúc 'gửi ngay', nhưng chưa có xác nhận yes_no rõ ràng → agent vẫn phải gọi clarify(response_type='yes_no'), không được gọi send trực tiếp."
+      }
+    },
+    {
+      "id": "G09_multiturn_carryover_arxiv_pages",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Đọc paper arXiv 2303.08774 giúp mình, lấy 2 trang đầu."
+        },
+        {
+          "role": "user",
+          "content": "Đổi thành 4 trang đầu đi."
+        },
+        {
+          "role": "user",
+          "content": "Vẫn đọc paper 2303.08774 đó nhé."
+        }
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "paper_text",
+            "args": {
+              "arxiv_url": "2303.08774",
+              "max_pages": 4
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_arxiv_args_correction",
+        "difficulty": "hard",
+        "what_it_tests": "3 turns: Carry arXiv ID 2303.08774 và cập nhật max_pages từ 2 thành 4 theo lượt sửa của user."
+      }
+    },
+    {
+      "id": "G10_multiturn_out_of_scope_after_research",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Tìm tin mới về Gemini 1.5 Pro."
+        },
+        {
+          "role": "user",
+          "content": "Cảm ơn bạn. Giờ giải giúp mình phương trình bậc hai 2x^2 + 5x - 3 = 0."
+        },
+        {
+          "role": "user",
+          "content": "Tính nghiệm x ra cụ thể nhé."
+        }
+      ],
+      "failure_type": "out_of_scope",
+      "expect": {
+        "no_tool": true,
+        "behavior": "refuse"
+      },
+      "metadata": {
+        "skill": "multiturn_out_of_scope_pivot",
+        "difficulty": "medium",
+        "what_it_tests": "3 turns: Đổi chủ đề từ research sang bài toán giải tích phân/phương trình ở turn cuối → từ chối, KHÔNG gọi tool."
+      }
+    }
+  ]
 }
