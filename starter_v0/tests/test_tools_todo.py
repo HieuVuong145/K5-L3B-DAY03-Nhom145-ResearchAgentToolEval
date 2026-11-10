@@ -110,13 +110,60 @@ def test_policy_instruction_like_lines_go_to_untrusted_text() -> None:
 #   2. bad / missing input from the model (empty string, wrong type, out-of-enum value)
 #   3. failure path (missing key, HTTP error, timeout) -> returns error dict, does not raise
 
-def test_my_new_tool_happy_path() -> None:
-    pytest.skip(TODO)
+extract_links = TOOL_FUNCTIONS["extract_links"]
 
 
-def test_my_new_tool_bad_input_from_model() -> None:
-    pytest.skip(TODO)
+def test_extract_links_returns_unique_links_in_order_without_trailing_punctuation(fake_http) -> None:
+    calls = fake_http(FakeResponse({}))
+    text = (
+        "Đọc bài https://openai.com/blog/gpt-5. Rồi xem (https://www.anthropic.com/news/claude), "
+        "và lại https://OpenAI.com/blog/gpt-5/ nữa!"
+    )
+
+    result = extract_links(text=text)
+
+    assert result["items"] == [
+        {"url": "https://openai.com/blog/gpt-5", "source": "openai.com"},
+        {"url": "https://www.anthropic.com/news/claude", "source": "anthropic.com"},
+    ]
+    assert result["total_found"] == 2
+    assert result["truncated"] is False
+    assert calls == []  # local tool: no network
 
 
-def test_my_new_tool_failure_returns_error_dict() -> None:
-    pytest.skip(TODO)
+def test_extract_links_limit_from_model_as_string_caps_items() -> None:
+    text = " ".join(f"https://example.com/{i}" for i in range(5))
+
+    result = extract_links(text=text, limit="2")
+
+    assert [item["url"] for item in result["items"]] == ["https://example.com/0", "https://example.com/1"]
+    assert result["total_found"] == 5
+    assert result["truncated"] is True
+
+
+def test_extract_links_text_without_links_returns_empty_items() -> None:
+    result = extract_links(text="Không có link nào ở đây cả.")
+
+    assert result["items"] == []
+    assert result["total_found"] == 0
+    assert "error" not in result
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "error"),
+    [
+        ({"text": ""}, "ValueError"),
+        ({"text": "   "}, "ValueError"),
+        ({"text": None}, "TypeError"),
+        ({"text": ["https://a.com"]}, "TypeError"),
+        ({"text": "https://a.com", "limit": 0}, "ValueError"),
+        ({"text": "https://a.com", "limit": "nhiều"}, "ValueError"),
+    ],
+)
+def test_extract_links_bad_input_returns_error_dict_instead_of_raising(kwargs, error) -> None:
+    result = extract_links(**kwargs)
+
+    assert result["tool"] == "extract_links"
+    assert result["error"] == error
+    assert result["message"]
+    assert "items" not in result
