@@ -73,6 +73,8 @@ Lấy từ `starter_v0/artifacts/version_log.csv` và `starter_v0/runs/*.json`. 
 
 **Phân tích v3 (tăng 0.85 → 0.90, giả thuyết chính chưa được xác nhận):** R11 giờ PASS (`clarify` có `response_type="text"`), có thể nhờ phần "Argument conventions" mới. Nhưng mục tiêu chính của v3 là M03 thì vẫn FAIL y hệt v2: `timeline(screenname="sama", limit=3)` — rule "corrections win" và ví dụ "à nhầm, của X" trong prompt không đủ để model 1.7B bỏ tên ở lượt 1; `multiturn_accuracy` giữ nguyên 0.83. R12 vẫn FAIL: `clarify(response_type="text")` hỏi lại nội dung bản tin thay vì xin xác nhận yes/no. Kết luận trung thực: mức tăng 0.05 đến từ R11 chứ không phải từ rule multi-turn.
 
+**Sau v3:** khai báo tool mới `extract_links` (role B) được thêm vào cuối `artifacts/tools.yaml` sau khi đã chạy v3, nên `tools_hash` của file live khác v3 (`e4eb19c6d4b7`). Bản đúng của v3 vẫn lưu ở `starter_v0/artifacts/versions/v3/` và khớp hash trong run v3; các run sau (group eval, chat) dùng bản live có `extract_links`.
+
 ### B2. Failure Analysis
 
 Lấy từ `results[*].result.failures` trong run JSON.
@@ -108,11 +110,13 @@ Lấy từ `starter_v0/transcripts/*.transcript.json`.
 
 | Item | Evidence File | What Worked | Risk / Guardrail |
 |---|---|---|---|
-| Tool mới (`tools/<tên>/`) |  |  |  |
-| Unit test tool mới (≥ 3 test/tool) | `pytest` output (0 failed) |  |  |
+| Tool mới (`tools/<tên>/`) | `starter_v0/tools/extract_links/` (`tool.py`, `TOOL.md`), đăng ký trong `tools/__init__.py` + `artifacts/tools.yaml` | Lấy các link `http(s)` duy nhất từ đoạn text user dán vào (newsletter, tin nhắn, danh sách nguồn), giữ thứ tự, kèm domain; bỏ dấu câu dính cuối link và ngoặc bao quanh; bỏ trùng không phân biệt hoa/thường và `/` cuối. Không gọi mạng, không cần key. Luồng dùng: `extract_links` → `fetch` link user chọn | Description trong `tools.yaml` ghi rõ DO NOT USE để đọc nội dung trang (`fetch`), tìm web (`lookup`) hay khi user không dán text (`clarify`). Input xấu trả error dict, không raise |
+| Unit test tool mới (≥ 3 test/tool) | `starter_v0/tests/test_tools_todo.py` (`test_extract_links_*`); `pytest` toàn suite: 76 passed, 0 failed (14 skipped là stub TODO của tool có sẵn) | 9 test: happy path (kiểm tra luôn là không có request mạng nào), `limit` model gửi dạng chuỗi `"2"`, text không có link → `items` rỗng không lỗi, và 6 input xấu (`""`, chỉ khoảng trắng, `None`, list, `limit=0`, `limit="nhiều"`) → error dict | Test chạy offline (`conftest.py` chặn HTTP thật); mỗi test assert cả output lẫn việc không có side effect |
 | UI (lệnh chạy + link dùng thử) |  |  |  |
 
 Tool unit tests: số test đã viết, và một ví dụ lỗi mà unit test bắt được nhưng eval không bắt được.
+
+- `extract_links`: 9 test. Ví dụ lỗi chỉ unit test bắt được: link ở cuối câu như `https://openai.com/blog/gpt-5.` — nếu tool giữ dấu `.` thì eval vẫn PASS (model gọi đúng `extract_links` với đúng `text`), nhưng `fetch` sau đó nhận URL sai. Test `test_extract_links_returns_unique_links_in_order_without_trailing_punctuation` khoá hành vi này.
 
 ### B5. Bonus Evidence
 
