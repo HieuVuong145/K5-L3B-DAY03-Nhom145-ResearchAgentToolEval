@@ -8,7 +8,7 @@
 
 ## 1. Thông tin nhóm
 
-- Tên nhóm:
+- Tên nhóm: Nhóm 145
 - Thành viên và phân công: xem [TEAM.md](../../TEAM.md)
 - Provider/model dùng cho v0–v3: OpenRouter (`--provider openrouter`), model `liquid/lfm-3-1.7b:free` (đặt qua `OPENROUTER_MODEL` trong `.env`), temperature 0
 
@@ -18,7 +18,7 @@
 
 > 1–2 câu mô tả agent dùng để làm gì (cho team khác hiểu nhanh).
 
-Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc URL, tổng hợp thành digest, và gửi lên Telegram khi được xác nhận."
+Research Agent: Trợ lý AI hỗ trợ nghiên cứu và tổng hợp thông tin, có khả năng tìm kiếm tin tức theo từ khóa, theo dõi bài đăng trên X/Twitter, đọc và tóm tắt nội dung từ URL, tìm kiếm các bài báo khoa học trên arXiv, trích xuất liên kết từ văn bản và tổng hợp thành bản tin có cấu trúc. Agent cũng hỗ trợ gửi bản tin lên kênh Telegram của nhóm sau khi được người dùng xác nhận.
 
 **Cách chạy UI:**
 
@@ -37,16 +37,25 @@ Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc 
 | Tên tool | Làm được gì | Tool mới nhóm thêm? |
 |---|---|---|
 | clarify | hỏi lại người dùng khi thiếu thông tin | không |
-|  |  |  |
-|  |  |  |
+| timeline |Lấy các bài đăng (tweets) mới nhất từ một tài khoản X/Twitter cụ thể.|không |
+| social_search |Tìm kiếm các bài đăng trên X/Twitter theo từ khóa hoặc chủ đề trên nhiều tài khoản.|không|
+| lookup |Tìm kiếm thông tin, tin tức và bài viết trên Internet thông qua Tavily.|không|
+| fetch |Truy cập và trích xuất nội dung từ một URL cụ thể do người dùng cung cấp thông qua Firecrawl.|không|
+| format | Tổng hợp và định dạng các kết quả đã thu thập từ những tool khác thành bản tin hoặc digest Markdown. |không|
+| send | Gửi nội dung văn bản đến kênh Telegram của nhóm sau khi người dùng xác nhận đồng ý. |không|
+| policy| Tra cứu sổ tay quy định nội bộ của công ty về AI Research, bảo mật dữ liệu, trích dẫn nguồn, xuất bản và sử dụng công cụ. |không|
+| papers| Tìm kiếm các bài báo khoa học và công trình nghiên cứu trên arXiv theo chủ đề. |không|
+| paper_text | Tải và trích xuất nội dung văn bản từ một bài báo PDF trên arXiv dựa trên ID hoặc URL được cung cấp. |không|
+| extract_links | Trích xuất các đường dẫn HTTP/HTTPS duy nhất và tên miền tương ứng từ đoạn văn bản người dùng cung cấp. |có|
+
 
 ### A3. Câu hỏi mẫu để thử
 
 > 3–5 câu hỏi/yêu cầu mẫu để team khác tự thử agent ngay.
 
-1.
-2.
-3.
+1. Find the 5 most notable AI news stories from this week. Provide each headline, a brief summary, and its source link.
+2. Retrieve the 5 most recent posts from Sam Altman on X and summarize the main topics he is discussing.
+3. Find the 5 latest research papers on AI Agents from arXiv. Include each paper's title, authors, and a brief summary.
 
 ## 3. Giải pháp
 
