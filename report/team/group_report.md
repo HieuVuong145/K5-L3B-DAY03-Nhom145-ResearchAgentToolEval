@@ -95,7 +95,15 @@ INF | https://random-name.trycloudflare.com
 
 > Tóm tắt các thay đổi chính trong `starter_v0/artifacts/system_prompt.md` và `starter_v0/artifacts/tools.yaml`, và tool mới nhóm viết (tên, làm gì, khi nào agent nên gọi).
 
--
+| File | Nội dung thay đổi chính | Mục đích |
+|---|---|---|
+| `starter_v0/artifacts/system_prompt.md` | Hoàn thiện vai trò của Research Agent: tìm kiếm, nghiên cứu, đọc và tổng hợp thông tin. | Xác định rõ phạm vi và cách agent xử lý yêu cầu. |
+| `starter_v0/artifacts/system_prompt.md` | Bổ sung hướng dẫn lựa chọn tool theo từng loại yêu cầu: tin tức, X/Twitter, URL, paper arXiv, trích xuất liên kết. | Giúp agent chọn đúng tool thay vì gọi công cụ không phù hợp. |
+| `starter_v0/artifacts/system_prompt.md` | Bổ sung quy tắc xử lý khi thiếu thông tin thông qua `clarify`. | Tránh tự suy đoán tài khoản, URL hoặc thông tin còn thiếu. |
+| `starter_v0/artifacts/system_prompt.md` | Bổ sung yêu cầu xác nhận trước khi gửi nội dung lên Telegram. | Đảm bảo an toàn trước khi thực hiện hành động bên ngoài. |
+| `starter_v0/artifacts/tools.yaml` | Khai báo và mô tả các tool agent có thể sử dụng, gồm Core tools và Bonus tools. | Cung cấp giao diện và điều kiện sử dụng cho từng tool. |
+| `starter_v0/artifacts/tools.yaml` | Bổ sung tool `extract_links` do nhóm phát triển. | Mở rộng khả năng xử lý văn bản có chứa nhiều liên kết. |
+| `starter_v0/artifacts/tools.yaml` | Làm rõ tên tool, tham số đầu vào và chức năng tương ứng. | Giúp agent gọi tool đúng cách và truyền đúng dữ liệu. |
 
 ## 4. Kết quả — PHẦN B: Chi tiết và bằng chứng
 
