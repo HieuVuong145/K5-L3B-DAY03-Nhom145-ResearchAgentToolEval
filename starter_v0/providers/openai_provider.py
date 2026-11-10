@@ -41,7 +41,14 @@ class OpenAIProvider:
         if not api_key:
             raise RuntimeError(f"Missing API key env var: {self.api_key_env}")
 
-        client = OpenAI(api_key=api_key, base_url=self.base_url)
+        # Nhom145: free endpoints rate-limit (429) and have low uptime (5xx). The SDK retries those
+        # with exponential backoff; LLM_MAX_RETRIES raises the count so runs stay valid
+        # (provider_error_cases == 0). Default 2 = unchanged SDK behaviour.
+        client = OpenAI(
+            api_key=api_key,
+            base_url=self.base_url,
+            max_retries=int(os.getenv("LLM_MAX_RETRIES", "2")),
+        )
         kwargs: dict[str, Any] = {
             "model": model or self.default_model,
             "messages": messages,

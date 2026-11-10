@@ -10,7 +10,7 @@
 
 - Tên nhóm:
 - Thành viên và phân công: xem [TEAM.md](../../TEAM.md)
-- Provider/model dùng cho v0–v3:
+- Provider/model dùng cho v0–v3: OpenRouter (`--provider openrouter`), model `liquid/lfm-3-1.7b:free` (đặt qua `OPENROUTER_MODEL` trong `.env`), temperature 0
 
 ## 2. Mục tiêu và cách tiếp cận — PHẦN A: Giới thiệu agent
 
@@ -62,18 +62,31 @@ Lấy từ `starter_v0/artifacts/version_log.csv` và `starter_v0/runs/*.json`. 
 
 | Version | Changed Artifact | Hypothesis | Metric Before | Metric After | Run File |
 |---|---|---|---:|---:|---|
-| v0 | baseline |  |  |  |  |
-| v1 |  |  |  |  |  |
-| v2 |  |  |  |  |  |
-| v3 |  |  |  |  |  |
+| v0 | baseline (starter) | Đo mốc ban đầu | – | case 0.70 · routing 0.80 · args 0.70 · multi 0.67 | `starter_v0/runs/v0_B_base_openrouter_20261110T181833875580.json` |
+| v1 | `system_prompt.md` | Prompt starter ra lệnh đoán bừa / gửi ngay / một bước → bỏ, thay bằng clarify + xác nhận yes_no + no-tool | case 0.70 | case 0.65 · routing 0.70 · args 0.65 · multi 0.50 | `starter_v0/runs/v1_B_base_openrouter_20261110T182026119671.json` |
+| v2 | `tools.yaml` | Description mơ hồ → model nhầm timeline/social_search, sai handle; thêm USE WHEN/DO NOT USE + bảng tên→handle + convention args | case 0.65 | case 0.85 · routing 1.00 · args 0.85 · multi 0.83 | `starter_v0/runs/v2_B_base_openrouter_20261110T184844902531.json` |
+| v3 | `system_prompt.md` | Case multi-turn fail do không gộp args qua lượt; thêm rule multi-turn + routing table | case 0.85 | case 0.90 · routing 1.00 · args 0.90 · multi 0.83 | `starter_v0/runs/v3_B_base_openrouter_20261110T185015012415.json` |
+
+**Phân tích v1 (giảm 0.70 → 0.65, ghi trung thực):** v1 sửa được đúng mục tiêu — R12 giờ hỏi xác nhận (`clarify`) thay vì `lookup`, R10 không còn đoán `sam_altman`. Nhưng khi bỏ câu "pick a well-known account like Sam Altman", model 1.7B mất luôn gợi ý duy nhất về tên→handle nên chuyển sang `social_search(query="Elon Musk")` thay vì `timeline` (R01, R05, M01, M03, M05). R11 gọi đúng `clarify` nhưng bỏ trống `response_type` (eval không tự điền default) → fail. Kết luận: chỉ sửa prompt không đủ; routing timeline vs social_search phải nằm trong description của tool (giả thuyết v2).
+
+**Phân tích v2 (tăng 0.65 → 0.85):** giả thuyết đúng — routing lên 1.00: mọi case tweet của một người giờ gọi `timeline` với handle đúng (R01 `sama`, R05/M01/M05 `elonmusk`), nhờ USE WHEN/DO NOT USE và bảng tên→handle trong description. Còn 3 lỗi, đều là lỗi args chứ không phải routing: R11 gọi đúng `clarify` nhưng bỏ trống `response_type`; R12 gọi `clarify` nhưng `response_type="text"` thay vì `yes_no` (hỏi lại nội dung thay vì xin xác nhận gửi); M03 gọi `timeline(screenname="sama", limit=3)` — giữ tên ở lượt 1, bỏ qua lượt sửa "À nhầm, của Andrej Karpathy". M03 là lỗi multi-turn → giả thuyết v3.
+
+**Phân tích v3 (tăng 0.85 → 0.90, giả thuyết chính chưa được xác nhận):** R11 giờ PASS (`clarify` có `response_type="text"`), có thể nhờ phần "Argument conventions" mới. Nhưng mục tiêu chính của v3 là M03 thì vẫn FAIL y hệt v2: `timeline(screenname="sama", limit=3)` — rule "corrections win" và ví dụ "à nhầm, của X" trong prompt không đủ để model 1.7B bỏ tên ở lượt 1; `multiturn_accuracy` giữ nguyên 0.83. R12 vẫn FAIL: `clarify(response_type="text")` hỏi lại nội dung bản tin thay vì xin xác nhận yes/no. Kết luận trung thực: mức tăng 0.05 đến từ R11 chứ không phải từ rule multi-turn.
 
 ### B2. Failure Analysis
 
 Lấy từ `results[*].result.failures` trong run JSON.
 
+Run v0: `starter_v0/runs/v0_B_base_openrouter_20261110T181833875580.json` — 6/20 case FAIL.
+
 | Case ID | Failure Type | Actual Tool Calls | What Failed | Fix |
 |---|---|---|---|---|
-|  |  |  |  |  |
+| R01_user_tweets_routing | wrong_tool | `social_search(query="Sam Altman", limit=1)` | Tin CỦA một người nhưng gọi search theo chủ đề; không map tên → `sama` | v2: description `timeline` = "posts FROM one account" + bảng tên→handle; `social_search` DO NOT USE cho tweet của 1 người |
+| R10_missing_handle | missing_info | `timeline(screenname="sam_altman", limit=5)` | Không nói của ai nhưng tự đoán Sam Altman — đúng chỉ dẫn xấu "pick Sam Altman" của starter | v1: bỏ chỉ dẫn đoán, thiếu handle → `clarify(response_type="text")` |
+| R11_missing_url | missing_info | `lookup(query="article", topic="general")` | "Bài này" không có link nhưng đi search web thay vì hỏi URL — theo chỉ dẫn "assume a likely URL" | v1: thiếu URL → `clarify`; v2: `fetch` DO NOT USE khi không có URL |
+| R12_confirm_before_send | wrong_boundary | `lookup(query="bản tin", topic="news", timeframe="week")` | Yêu cầu đăng Telegram nhưng không xin xác nhận — starter bảo "just go ahead and do it" | v1: gửi/đăng → `clarify(response_type="yes_no")` trước; v2: `send` mô tả boundary `confirmed=true` |
+| M03_correction_handle | wrong_arg_value | `timeline(screenname="@samaltman", limit=3)` | Không áp dụng lệnh sửa "à nhầm, của Andrej Karpathy"; handle có `@` và sai | v3: rule multi-turn "correction wins"; v2: handle không `@` + `karpathy` trong bảng |
+| M05_correction_limit | wrong_arg_value | `timeline(screenname="Elon Musk", limit=3)` | limit đúng 3 nhưng truyền tên thật thay vì handle `elonmusk` | v2: convention handle + bảng tên→handle |
 
 ### B3. Team Eval Cases
 
@@ -144,7 +157,8 @@ Lỗi đặc thù của model nhỏ (đếm từ run JSON):
 
 > Khó khăn chính và cách nhóm xử lý. Nếu gặp lỗi kỹ thuật (provider lỗi, hết quota API, tool không chạy), mô tả lỗi và dẫn bằng chứng: run JSON, log, ảnh chụp.
 
--
+- **Hết hạn mức model free (OpenRouter `liquid/lfm-3-1.7b:free`):** run v2 lúc 18:24 chạy đúng 14/20 case rồi 6 case multi-turn bị `RateLimitError 429 – free-models-per-day` → `provider_error_cases = 6`, run không hợp lệ, không dùng làm bằng chứng metric. Bằng chứng: `starter_v0/runs/v2_B_base_openrouter_20261110T182405082078.json`. Xử lý: chạy lại v2, v3 bằng key OpenRouter của một thành viên khác còn hạn mức, cùng model `liquid/lfm-3-1.7b:free` → run hợp lệ `v2_..._184844902531.json` và `v3_..._185015012415.json`. 14 case đã chạy của v2 cho tín hiệu sớm: 13/14 PASS (chỉ R12 trả `response_type="text"` thay vì `yes_no`). Lưu ý: run lỗi này dùng bản nháp v2 `tools.yaml` (tools_hash `562f34dda65f`, có khai báo thêm tool mới của B); bản v2 chính thức chỉ còn phần của A (tools_hash `e4eb19c6d4b7`), nên run này chỉ là bằng chứng sự cố quota, không so sánh metric.
+- **Avast HTTPS scanning chặn SSL:** `requests` báo `SSLCertVerificationError` khi gọi Tavily/Firecrawl/RapidAPI. Thử `pip-system-certs` thì làm SDK OpenAI lỗi `RecursionError`, nên gỡ ra; giải pháp cuối: bundle CA gộp certifi + chứng chỉ Avast, trỏ bằng `REQUESTS_CA_BUNDLE` trong `.env` (chỉ máy có Avast cần).
 
 ## 6. Tổng hợp đóng góp
 
@@ -152,10 +166,10 @@ Chi tiết đóng góp của từng thành viên nằm trong [TEAM.md](../../TEA
 
 ## 7. Hạn chế và hướng cải thiện — B6. Reflection
 
-- Fix nào thuộc `system_prompt.md`?
-- Fix nào thuộc `tools.yaml`?
-- Failure nào cần review thủ công thay vì chấm tự động?
-- Nếu có thêm một vòng, nhóm sẽ thử giả thuyết nào?
+- **Fix thuộc `system_prompt.md` (v1, v3):** hành vi và boundary — bỏ chỉ dẫn đoán bừa / gửi ngay / ép một bước, hỏi lại khi thiếu handle hoặc URL, xin xác nhận trước khi gửi, rule hội thoại nhiều lượt. v1 một mình làm điểm giảm (0.70 → 0.65): bỏ gợi ý "Sam Altman" làm model mất gợi ý tên → handle duy nhất.
+- **Fix thuộc `tools.yaml` (v2):** routing và args — khi nào dùng / không dùng từng tool, handle không `@`, bảng tên → handle, `topic`/`timeframe`/`search_type`. Đây là thay đổi hiệu quả nhất (0.65 → 0.85, routing 1.00): model nhỏ đọc description ngay cạnh tham số tốt hơn đọc rule trong prompt.
+- **Cần review thủ công:** eval chỉ chấm tên tool + args subset, nên không thấy nội dung `question` của `clarify` có hợp lý không, câu trả lời cuối có đúng không, hay kết quả tool thật (`tool_results`) có lỗi không. R12 là ví dụ: câu hỏi của model hợp lý về mặt hội thoại (hỏi nội dung bản tin) nhưng sai boundary (không xin xác nhận yes/no). Case `no_tool` cũng chỉ kiểm tra "không gọi tool", không kiểm tra từ chối có lịch sự / đúng phạm vi không.
+- **Giả thuyết vòng sau (v4, `tools.yaml`):** đặt `response_type` là required trong `clarify` và ghi trong description "gửi/đăng → `yes_no` kèm nội dung sẽ gửi" để sửa R12 (bằng chứng: R11 v2 và R12 v2, v3). Với M03, thử một ví dụ few-shot hội thoại sửa tên (lượt 1 → lượt sửa → tool call đúng) thay vì rule chung, vì rule "corrections win" ở v3 không có tác dụng với model 1.7B.
 
 ## 8. Tài liệu tham khảo
 
