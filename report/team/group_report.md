@@ -21,11 +21,45 @@
 Research Agent: Trợ lý AI hỗ trợ nghiên cứu và tổng hợp thông tin, có khả năng tìm kiếm tin tức theo từ khóa, theo dõi bài đăng trên X/Twitter, đọc và tóm tắt nội dung từ URL, tìm kiếm các bài báo khoa học trên arXiv, trích xuất liên kết từ văn bản và tổng hợp thành bản tin có cấu trúc. Agent cũng hỗ trợ gửi bản tin lên kênh Telegram của nhóm sau khi được người dùng xác nhận.
 
 **Cách chạy UI:**
+Ứng dụng Research Agent được xây dựng bằng Streamlit, cho phép người dùng tương tác với AI Agent thông qua giao diện web.
+Bước 1: Cài đặt dependencies
+Di chuyển đến thư mục starter_v0 và chạy:
+```text
+pip install -r requirements.txt
+```
+Bước 2: Khởi chạy ứng dụng
+```text
+streamlit run app.py
+```
+Hoặc sử dụng:
+```text
+python -m streamlit run app.py
+```
+Bước 3: Truy cập giao diện
+Mở trình duyệt và truy cập:
+```text
+http://localhost:8501
+```
 
 > Lệnh chạy UI (ví dụ `streamlit run app.py`) và dependency đã thêm vào `starter_v0/requirements.txt`.
 
 **Link dùng thử (deploy):**
+Ứng dụng được public thông qua Cloudflare Quick Tunnel, cho phép các thành viên trong nhóm truy cập giao diện từ Internet mà không cần cài đặt ứng dụng trên máy cá nhân.
+Deployment platform: Cloudflare Tunnel (Quick Tunnel)
+Public URL:
+https://viking-introduces-sorry-beats.trycloudflare.com
+Lưu ý: Đây là đường dẫn truy cập tạm thời. Ứng dụng chỉ hoạt động khi máy chủ Streamlit và Cloudflare Tunnel trên máy triển khai vẫn đang chạy. URL có thể thay đổi khi khởi tạo Quick Tunnel mới.
 
+Bước 1: Chạy streamlit như các bước trên sau đó mở terminal thứ 2:
+```text
+cloudflared tunnel --url http://localhost:8501
+```
+Bước 2: Copy đường link
+Bạn sẽ thấy kết quả tương tự:
+```text
+INF | Your quick Tunnel has been created!
+INF | https://random-name.trycloudflare.com
+```
 > Dán link public để team khác mở thử ngay. Cách deploy nhanh bằng Cloudflare Tunnel xem README. Nếu deploy Vercel/Streamlit Cloud thì dán link đó.
 >
 > URL:
