@@ -1,0 +1,6 @@
+# Prompt/tool artifacts are hashed byte-for-byte (versioning.py -> prompt_hash/tools_hash in runs/*.json).
+# Store and check them out exactly as-is (no CRLF/LF conversion) so the hashes in run JSON
+# can be reproduced on every machine, regardless of core.autocrlf.
+starter_v0/artifacts/system_prompt.md -text
+starter_v0/artifacts/tools.yaml -text
+starter_v0/artifacts/versions/** -text
