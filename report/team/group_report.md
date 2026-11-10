@@ -41,7 +41,6 @@ Mở trình duyệt và truy cập:
 http://localhost:8501
 ```
 
-> Lệnh chạy UI (ví dụ `streamlit run app.py`) và dependency đã thêm vào `starter_v0/requirements.txt`.
 
 **Link dùng thử (deploy):**
 Ứng dụng được public thông qua Cloudflare Quick Tunnel, cho phép các thành viên trong nhóm truy cập giao diện từ Internet mà không cần cài đặt ứng dụng trên máy cá nhân.
@@ -60,13 +59,10 @@ Bạn sẽ thấy kết quả tương tự:
 INF | Your quick Tunnel has been created!
 INF | https://random-name.trycloudflare.com
 ```
-> Dán link public để team khác mở thử ngay. Cách deploy nhanh bằng Cloudflare Tunnel xem README. Nếu deploy Vercel/Streamlit Cloud thì dán link đó.
->
-> URL:
+
 
 ### A2. Tool agent có
 
-> Liệt kê các tool agent đang dùng (gồm tool mới nhóm tự thêm). Mỗi tool 1 dòng: tên + làm được gì.
 
 | Tên tool | Làm được gì | Tool mới nhóm thêm? |
 |---|---|---|
@@ -85,15 +81,11 @@ INF | https://random-name.trycloudflare.com
 
 ### A3. Câu hỏi mẫu để thử
 
-> 3–5 câu hỏi/yêu cầu mẫu để team khác tự thử agent ngay.
-
 1. Find the 5 most notable AI news stories from this week. Provide each headline, a brief summary, and its source link.
 2. Retrieve the 5 most recent posts from Sam Altman on X and summarize the main topics he is discussing.
 3. Find the 5 latest research papers on AI Agents from arXiv. Include each paper's title, authors, and a brief summary.
 
 ## 3. Giải pháp
-
-> Tóm tắt các thay đổi chính trong `starter_v0/artifacts/system_prompt.md` và `starter_v0/artifacts/tools.yaml`, và tool mới nhóm viết (tên, làm gì, khi nào agent nên gọi).
 
 | File | Nội dung thay đổi chính | Mục đích |
 |---|---|---|
