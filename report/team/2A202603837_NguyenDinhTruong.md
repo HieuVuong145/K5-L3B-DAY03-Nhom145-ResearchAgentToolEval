@@ -8,7 +8,10 @@ Ví dụ: `20241234_NguyenVanAn.md`.
 
 - Họ tên: Nguyễn Đình Trường
 - MSSV: 2A202603837
-- Email: truong,ngdinh2003@gmail.com
+- Email: truong.ngdinh2003@gmail.com
+- Github: ngdinhtruong28
+- Nhóm: Nhóm 145 - L3B
+- Vai trò: Role D - UI & Báo cáo
 
 ## 2. Phần việc phụ trách
 - Làm UI Streamlit + mở link qua Cloudflare
