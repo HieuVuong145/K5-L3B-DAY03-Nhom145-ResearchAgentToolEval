@@ -9,7 +9,7 @@ Ví dụ: `20241234_NguyenVanAn.md`.
 - Họ tên: Nguyễn Đình Trường
 - MSSV: 2A202603837
 - Email: truong.ngdinh2003@gmail.com
-- Github: ngdinhtruong28
+- Github: ngdinhtruong28 (Commit trong repo được đẩy lên từ email: truesenpai2k3@gmail.com)
 - Nhóm: Nhóm 145 - L3B
 - Vai trò: Role D - UI & Báo cáo
 
